@@ -12,8 +12,11 @@ const Sender = () => {
     async function startSendingVideo(){
         if(!socket) return ;
         const pc = new RTCPeerConnection();
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
+        pc.onnegotiationneeded=async()=>{
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket?.send(JSON.stringify({type:"createOffer",sdp:pc.localDescription}));
+        }
 
         pc.onicecandidate=(event)=>{
             console.log(event);
@@ -22,7 +25,7 @@ const Sender = () => {
                 socket.send(JSON.stringify({type:'iceCandidates' , candidate:event.candidate}))
             }
         }
-        socket?.send(JSON.stringify({type:"createOffer",sdp:pc.localDescription}));
+       
 
         socket.onmessage=(event)=>{
             const data=JSON.parse(event.data);
@@ -33,6 +36,8 @@ const Sender = () => {
             }
 
         }
+        const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false})
+        pc.addTrack(stream.getVideoTracks()[0])
     }
   return (
     <div>
