@@ -8,23 +8,25 @@ wss.on('connection', function connection(ws) {
     ws.on('error', console.error);
     ws.on('message', function message(data) {
         const message = JSON.parse(data);
-        if (message.type === "sender") {
-            console.log('sender set');
+        if (message.type === 'sender') {
             senderSocket = ws;
         }
         else if (message.type === 'receiver') {
-            console.log('receiver set');
             receiverSocket = ws;
         }
         else if (message.type === 'createOffer') {
-            console.log('createOffer');
+            if (ws !== senderSocket) {
+                return;
+            }
             receiverSocket === null || receiverSocket === void 0 ? void 0 : receiverSocket.send(JSON.stringify({ type: 'createOffer', sdp: message.sdp }));
         }
         else if (message.type === 'createAnswer') {
-            console.log('createAnswer');
-            receiverSocket === null || receiverSocket === void 0 ? void 0 : receiverSocket.send(JSON.stringify({ type: 'createAnswer', sdp: message.sdp }));
+            if (ws !== receiverSocket) {
+                return;
+            }
+            senderSocket === null || senderSocket === void 0 ? void 0 : senderSocket.send(JSON.stringify({ type: 'createAnswer', sdp: message.sdp }));
         }
-        else if (message.type === "iceCandidates") {
+        else if (message.type === 'iceCandidate') {
             if (ws === senderSocket) {
                 receiverSocket === null || receiverSocket === void 0 ? void 0 : receiverSocket.send(JSON.stringify({ type: 'iceCandidate', candidate: message.candidate }));
             }
@@ -33,5 +35,4 @@ wss.on('connection', function connection(ws) {
             }
         }
     });
-    ws.send('something');
 });
